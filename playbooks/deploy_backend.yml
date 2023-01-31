@@ -1,0 +1,5 @@
+---
+- hosts: backend
+  become: false
+  roles:
+  - { role: deploy_backend, tags: [deploy_backend, deploy] }

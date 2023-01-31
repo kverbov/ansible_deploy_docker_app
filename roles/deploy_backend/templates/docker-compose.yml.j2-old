@@ -1,0 +1,58 @@
+services:
+  web:
+    image: {{ backend_full_tag }}
+    container_name: bank-web
+    command: /bin/sh -c "python manage.py runserver 192.168.1.2:8000"
+    restart: always
+    ports:
+      - 192.168.1.2
+    env_file:
+      - "{{ deploy_src }}/.env"
+    depends_on:
+      - db
+      - redis
+
+  celery:
+    image: {{ backend_full_tag }}
+    container_name: bank-celery
+    command: /bin/sh -c "rm -f celerybeat.pid celerybeat-schedule && celery -A bank beat & celery -A bank worker --loglevel=INFO -f log/celery.log"
+    restart: always
+    env_file:
+      - "{{ deploy_src }}/.env"
+    depends_on:
+      - db
+      - redis
+
+  db:
+    image: {{ postgres_full_tag }}
+    container_name: bank-db
+    restart: always
+    volumes:
+      - data-prod-psql:/var/lib/postgresql/data/
+    ports:
+      - 192.168.1.2
+    env_file:
+      - "{{ deploy_src }}/.env.db"
+
+  db_dump:
+    image: {{ postgres_full_tag }}
+    container_name: bank-db-dump
+    restart: always
+    volumes:
+      - data-prod-psql-dump:/var/lib/postgresql/data/
+    ports:
+      - 192.168.1.2
+    env_file:
+      - "{{ deploy_src }}/.env.db_dump"
+
+  redis:
+    image: {{ redis_full_tag }}
+    container_name: bank-redis
+    restart: always
+    volumes:
+      - data-prod-redis:/data/
+
+volumes:
+  data-prod-psql:
+  data-prod-psql-dump:
+  data-prod-redis:

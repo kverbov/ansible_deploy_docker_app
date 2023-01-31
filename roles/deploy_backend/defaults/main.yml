@@ -1,0 +1,40 @@
+---
+# defaults file for deploy_backend
+nexus_base_url: "{{ lookup('env','NEXUS_BASE_URL') | default('nexus.domain', true) }}"
+
+app_registry_path: "{{ lookup('env','APP_REGISTRY_PATH') | default('department/backend', true) }}"
+artifact_version: "{{ lookup('env','ARTIFACT_VERSION') | default('latest', true) }}"
+backend_full_tag: "{{ nexus_base_url }}/{{ app_registry_path }}:{{artifact_version}}"
+
+postgres_version: "{{ lookup('env','POSTGRES_VERSION') | default('13.2-alpine', true) }}"
+postgres_full_tag: "{{ nexus_base_url }}/general/postgres:{{postgres_version}}"
+
+redis_version: "{{ lookup('env','REDIS_VERSION') | default('6-alpine', true) }}"
+redis_full_tag: "{{ nexus_base_url }}/general/redis:{{redis_version}}"
+
+deploy_home: "~/deploy_department_app"
+deploy_src: "{{ deploy_home }}/backend"
+
+env_files:
+  - .env
+  - .env.db
+  - .env.db_dump
+
+# secrets example
+# secret_key: "{{ vault_secret_key }}"
+
+# sql_database: "{{ vault_sql_database }}"
+# sql_user: "{{ vault_sql_user }}"
+# sql_password: "{{ vault_sql_password }}"
+
+# sql_database_dump: "{{ vault_sql_database_dump }}"
+# sql_user_dump: "{{ vault_sql_user_dump }}"
+# sql_password_dump: "{{ vault_sql_password_dump }}"
+
+# ftp_user: "{{ vault_ftp_user }}"
+# ftp_password: "{{ vault_ftp_password }}"
+
+# static_token: "{{ vault_static_token }}"
+
+# registry_username: "{{ vault_registry_username }}"
+# registry_password: "{{ vault_registry_password }}"

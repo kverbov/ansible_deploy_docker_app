@@ -1,0 +1,4 @@
+- src: ssh://git@bitbucket.domain:7999/department/docker-ansible-role.git
+  scm: git
+  version: master
+  name: docker

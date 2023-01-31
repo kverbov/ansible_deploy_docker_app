@@ -1,0 +1,7 @@
+ansible-playbook 2.9.27
+  config file = /etc/ansible/ansible.cfg
+  configured module search path = ['/home/bank.rs.department/rrra123/.ansible/plugins/modules', '/usr/share/ansible/plugins/modules']
+  ansible python module location = /usr/lib/python3.6/site-packages/ansible
+  executable location = /usr/bin/ansible-playbook
+  python version = 3.6.8 (default, Jan 19 2022, 23:28:49) [GCC 192.168.1.210514 (Red Hat 192.168.1.2)]
+Using /etc/ansible/ansible.cfg as config file

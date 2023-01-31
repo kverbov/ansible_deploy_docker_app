@@ -1,0 +1,223 @@
+# vars file for deploy_backend
+
+web_host_port: "8001"
+db_port_external: "5432"
+dump_db_port_external: "54321"
+rabbitmq_port_external: "5672"
+rabbitmq_management_port_external: "15672"
+
+##################################
+#nginxoptions
+#################################
+docker_nginx_full_tag: "nexus.domain/department/nginx:1.21.6"
+
+##################################
+#enviromentsfortrinityfront
+##################################
+docker_trinity_front_manager_img_full_tag: "nexus.domain/department/frontend-manager:2.2.9"
+docker_trinity_front_manager_api_url: "https://manager.backend.cert-vip-client.domain"
+docker_trinity_front_manager_prof_api_url: "https://profiling.api.cert-vip-client.domain"
+
+##################################
+#enviromentsрґр»сџprod-рірµсђсѓрёрёdocker-compose
+##################################
+docker_web_img_full_tag: "nexus.domain/department/backend:1.7.0"
+docker_postgres_img_full_tag: "nexus.domain/general/postgres:13.2-alpine"
+docker_rabbitmq_img_full_tag: "nexus.domain/general/rabbitmq:management"
+
+##################################
+#enviromentsforaudit-printer
+##################################
+docker_audit_printer_full_tag: "nexus.domain/department/audit_printer:1.0.4"
+rabbitmq_queue_name: "audit_log"
+
+##################################
+#enviromentsforapplication
+##################################
+debug: "1"
+secret_key: ""
+allowed_host_list: "*"
+templates_dirs_list: "/usr/src/app/bank/templates"
+client_allowed_host_list: "*"
+
+#postgressettings
+db_name: "bank"
+db_user: "bank"
+db_password: ""
+db_host: "db1.cert.department.domain"
+db_port: "5432"
+
+#р”рѕсѓс‚сѓрїрєрѕсѓрѕрѕрірѕрѕр№р‘р”
+default_db_name: "bank"
+default_db_user: "bank"
+default_db_password: ""
+default_db_host: "db1.cert.department.domain"
+default_db_port: "5432"
+
+#р”рѕсѓс‚сѓрїрєрґр°рјрїрѕрірѕр№р‘р”
+dump_db_name: "bank_dump"
+dump_db_user: "bank"
+dump_db_password: ""
+dump_db_host: "db-dump"
+dump_db_port: "5432"
+
+#р”рѕсѓс‚сѓрїрєrabbit
+rabbitmq_host: "rabbitmq"
+rabbitmq_port: "5672"
+
+celery_broker_url: "amqp://rabbitmq:5672"
+celery_rabbitmq_management_host: "http://rabbitmq:15672"
+celery_result_backend: "redis://redis/0"
+session_cookie_name: "sessionid_investment"
+access_token_lifetime_hours: "24"
+
+staticfiles_dirs_list: "/usr/src/app/bank/static"
+#рґр»сџрїрѕсѓс‚рѕсџрѕрѕрѕрірѕс…сђр°рѕрёр»рёс‰р°рґрѕр»р¶рѕрѕр±с‹с‚сњрїрµсђсѓрёсѓс‚рµрѕс‚рѕс‹рјvolumeрірєрѕрѕс‚рµр№рѕрµсђрµ,рѕрґрѕрёрјрёр»рёсђр°р·рѕс‹рјрё
+static_root: "/usr/src/storage"
+media_root: "/usr/src/storage/media"
+
+#р”рѕсѓс‚сѓрїрєсѓрµсђрірёсѓсѓрірµрѕрµсђр°с†рёрёрѕрѕрірѕсѓс‚рµр№
+ai_news_url: "https://wso2ei.rsb.dmz.rs.department/invest/news/v1.0"
+ai_news_token: "''"
+
+#р¤рµр№рєрѕрір°сџр°ріс‚рѕсђрёр·р°с†рёсџрјрµрѕрµрґр¶рµсђр°,
+#рµсѓр»рёрїсѓсѓс‚рѕ,с‚рѕрёсѓрїрѕр»сњр·сѓрµс‚сѓсџр°ріс‚рѕсђрёр·р°с†рёсџрїрѕldap
+fake_manager_password: ""
+
+#рўрѕрєрµрѕрґр»сџexternal_exchange
+external_exchange_static_token: ""
+
+silk_enable: "0"
+
+log_level: "DEBUG"
+
+#рўс‚р°рѕрґр°сђс‚рѕс‹рµрїсђрѕс†рµрѕс‚с‹рєрѕрјрёсѓсѓрёрёрґр»сџс‚рёрїрѕрірїсђрѕрґсѓрєс‚рѕрі(0.00<: "x <"
+default_commission_min: "0.50"
+default_commission_default: "43831"
+default_commission_max: "3.00"
+
+#рќр°сѓс‚сђрѕр№рєр°рѕс‚с‡рµс‚рѕрі
+report_static_domain: "http://pdf-static-web.domain"
+report_request_url: "http://html-pdf-web.domain/pdf.php"
+report_domain: "http://html-pdf-web.domain"
+report_bearer_key: ""
+report_root: "/usr/src/storage/media/reports"
+report_days_shift: "365"
+
+basicauth_users: "admin:pas"
+
+#рќр°сѓс‚сђрѕр№рєр°рґр»сџсђр°р±рѕс‚с‹сѓbloomberg
+bloomberg_root: "/usr/src/storage/bloomberg"
+bloomberg_ftp_host: "ftp"
+bloomberg_ftp_user: ""
+bloomberg_ftp_password: ""
+
+##################################
+#clientsbackendoptions
+##################################
+web_client_web_host_port: "8002"
+client_secret_key: ""
+bank_backend_base_url: "https://manager.backend.cert-vip-client.domain/"
+
+##################################
+#pdfoptions
+##################################
+docker_html_pdf_web_img_full_tag: "nexus.domain/department/pdf/nginx:1.0.10"
+docker_html_pdf_php_img_full_tag: "nexus.domain/department/pdf/php:1.0.8"
+docker_html_pdf_queue_img_full_tag: "nexus.domain/department/pdf/php:1.0.8"
+docker_html_pdf_chrome_img_full_tag: "nexus.domain/department/pdf/chrome:1.0.8"
+docker_redis_img_full_tag: "nexus.domain/general/redis:6-alpine"
+docker_pdf_static_web_img_full_tag: "nexus.domain/department/pdf/static:2.0.0"
+
+#pdfprintingserviceport
+pdf_service_port: "8021"
+
+#staticbearerauthkey
+pdf_to_html_api_key: ""
+
+#logfileslifetime(set"never"tokeepalllogfiles)
+pdf_log_file_life_time: "1 month"
+
+#donotremovecachefiles(htmlforgenerationandoutputpdfs)
+pdf_debug_no_removing_cache: "0"
+
+#rabbitmqexternalport
+pdf_rabbit_port: "8022"
+
+#rabbitmqconnectioninurlformat<user>:<pass>@host:<port><path>
+pdf_rabbit_host: "guest:guest@html-pdf-rabbitmq:5672/"
+
+#redisconnectioninurlformathost:<port>
+pdf_redis_host: "html-pdf-redis:6379"
+
+#pdfstaticport
+pdf_static_port: "8020"
+
+#webdomainindockernetwork
+pdf_web_domain: "html-pdf-web"
+
+#chromeurlindocker
+pdf_chrome_url: "http://html-pdf-chrome:4444"
+
+#phphostnamefornginx
+pdf_php_host: "html-pdf-php"
+
+##################################
+#provider-apioptions
+##################################
+docker_provider_api_img_full_tag: "nexus.domain/department/providers-api:0.4.1"
+persistence_dsn: "postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
+amqp_dsn: "amqp://guest:guest@${RABBITMQ_HOST}:5672/"
+provider_api_keys: '{"
+        "provider1":"w;erkbsdofjbsdmflsnxcvklxcbvlsd",
+        "provider2":"se;ltrnsdpbvzsdflbsd;jbsjdbf",
+        "provider3":"sdfklhsdfkjbsdljfbsjdfsjdvfbsjl"}'
+provider_api_host_port: "8085"
+http_basic_username: "'bank-provider-api-usr1'"
+http_basic_password: "''"
+
+##################################
+#enviromentsforprofillingservice
+##################################
+docker_profiling_nginx_img_full_tag: "nexus.domain/department/profiling/nginx:1.1.1"
+docker_profiling_php_img_full_tag: "nexus.domain/department/profiling/php:1.1.1"
+docker_profiling_db_img_full_tag: "nexus.domain/department/mysql:8.0.28"
+
+#р’рѕрµс€рѕрёр№рїрѕсђс‚рѕр°рєрѕс‚рѕсђрѕрјрґрѕсѓс‚сѓрїрµрѕсѓрµсђрірёсѓ(nginx)
+profiling_service_port: "8086"
+
+#ррјсџрєрѕрѕс‚рµр№рѕрµсђр°сѓphpрѕр°рєрѕс‚рѕсђс‹р№nginxр±сѓрґрµс‚рїсђрѕрєсѓрёсђрѕрір°с‚сњр·р°рїсђрѕсѓс‹
+profiling_php_host: "profiling-php"
+
+#р’рѕрµс€рѕрёр№рїрѕсђс‚рґр»сџphpmyadmin(onlydev)
+#profiling_pma_service_port: "8081"
+
+#ррјсџрѕрѕрґс‹rabbit.рќрµрѕр±с…рѕрґрёрјрѕрїсђрёр·р°рїсѓсѓрєрµrabbitmqріdocker-сѓсђрµрґрµ
+profiling_rabbit_nodename: "rabbit@localhost"
+
+#rabbitmqsettings
+#profiling_rabbit_port: "5672"
+#рџрѕсђс‚web-рёрѕс‚рµсђс„рµр№сѓр°сѓрїсђр°рір»рµрѕрёсџrabbitmq
+#profiling_rabbit_management_port: "15672"
+
+#рџр°сђр°рјрµс‚сђс‹рґрѕсѓс‚сѓрїр°рєр±р°р·рµрґр°рѕрѕс‹с…рїсђрёр»рѕр¶рµрѕрёсџ
+profiling_db_host: "profiling-db"
+profiling_db_name: "profiling_new"
+profiling_db_user: "root"
+profiling_db_pass: "root"
+
+#yiidebug&env
+yii_debug: "false"
+yii_env: "prod"
+
+#рќр°сѓс‚сђрѕр№рєр°с…сђр°рѕрёр»рёс‰р°рёр·рѕр±сђр°р¶рµрѕрёр№рєрѕрїсђрѕсѓр°рј
+profiling_answer_base_dir: "/profiling/storage/answers"
+profiling_answer_base_url: "http://192.168.1.2:8000/files/answers"
+
+#рќр°сѓс‚сђрѕр№рєрёрґр»сџсђр°р±рѕс‚с‹сѓrabbitmq
+#р”рѕсѓс‚сѓрїрєrabbitmq
+profiling_rabbit_host: "guest:guest@profiling-rabbitmq:5672/"
+#рќр°р·рір°рѕрёрµрѕс‡рµсђрµрґрёсѓрєрѕс‚рѕсђсѓсћр±сѓрґсѓс‚рѕс‚рїсђр°рір»сџс‚сњсѓсџсђрµр·сѓр»сњс‚р°с‚с‹рїсђрѕс„рёр»рёсђрѕрір°рѕрёсџ
+profiling_rabbit_results_channel_name: "profiling_results"
+
+

@@ -1,0 +1,487 @@
+version: '3.9'
+
+x-common-envs: &backend-envs
+  SECRET_KEY: ${SECRET_KEY}
+  DEBUG: ${DEBUG}
+  ALLOWED_HOST_LIST: ${ALLOWED_HOST_LIST}
+  TEMPLATES_DIRS_LIST: ${TEMPLATES_DIRS_LIST}
+  BASICAUTH_USERS: ${BASICAUTH_USERS}
+  DB_NAME: ${DB_NAME}
+  DB_USER: ${DB_USER}
+  DB_PASSWORD: ${DB_PASSWORD}
+  DB_HOST: ${DB_HOST}
+  DB_PORT: ${DB_PORT}
+  DUMP_DB_NAME: ${DUMP_DB_NAME}
+  DUMP_DB_USER: ${DUMP_DB_USER}
+  DUMP_DB_PASSWORD: ${DUMP_DB_PASSWORD}
+  DUMP_DB_HOST: ${DUMP_DB_HOST}
+  DUMP_DB_PORT: ${DUMP_DB_PORT}
+  RABBITMQ_HOST: ${RABBITMQ_HOST}
+  RABBITMQ_PORT: ${RABBITMQ_PORT}
+  SESSION_COOKIE_NAME: ${SESSION_COOKIE_NAME}
+  STATICFILES_DIRS_LIST: ${STATICFILES_DIRS_LIST}
+  STATIC_ROOT: ${STATIC_ROOT}
+  MEDIA_ROOT: ${MEDIA_ROOT}
+  bank_BACKEND_BASE_URL: ${bank_BACKEND_BASE_URL}
+  ACCESS_TOKEN_LIFETIME_HOURS: ${ACCESS_TOKEN_LIFETIME_HOURS}
+  CELERY_BROKER_URL: ${CELERY_BROKER_URL}
+  CELERY_RABBITMQ_MANAGEMENT_HOST: ${CELERY_RABBITMQ_MANAGEMENT_HOST}
+  CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}
+  AI_NEWS_URL: ${AI_NEWS_URL}
+  AI_NEWS_TOKEN: ${AI_NEWS_TOKEN}
+  FAKE_MANAGER_PASSWORD: ${FAKE_MANAGER_PASSWORD}
+  EXTERNAL_EXCHANGE_STATIC_TOKEN: ${EXTERNAL_EXCHANGE_STATIC_TOKEN}
+  SILK_ENABLE: ${SILK_ENABLE}
+  REPORT_STATIC_DOMAIN: ${REPORT_STATIC_DOMAIN}
+  REPORT_DOMAIN: ${REPORT_DOMAIN}
+  REPORT_BEARER_KEY: ${REPORT_BEARER_KEY}
+  REPORT_ROOT: ${REPORT_ROOT}
+  LOG_LEVEL: ${LOG_LEVEL}
+  REPORT_DAYS_SHIFT: ${REPORT_DAYS_SHIFT}
+  DEFAULT_COMMISSION_MIN: ${DEFAULT_COMMISSION_MIN}
+  DEFAULT_COMMISSION_DEFAULT: ${DEFAULT_COMMISSION_DEFAULT}
+  DEFAULT_COMMISSION_MAX: ${DEFAULT_COMMISSION_MAX}
+  BLOOMBERG_ROOT: ${BLOOMBERG_ROOT}
+  BLOOMBERG_FTP_HOST: ${BLOOMBERG_FTP_HOST}
+  BLOOMBERG_FTP_USER: ${BLOOMBERG_FTP_USER}
+  BLOOMBERG_FTP_PASSWORD: ${BLOOMBERG_FTP_PASSWORD}
+
+networks:
+    network:
+
+services:
+  nginx:
+    image: "${DOCKER_NGINX_FULL_TAG}"
+#   container_name: nginx-test
+    network_mode: "host"
+    restart: always
+    volumes:
+      - nginx-config:/etc/nginx
+      - nginx-ssl:/etc/ssl
+      - nginx-certs:/etc/pki/tls/certs
+
+  manager-frontend:
+    image: "${DOCKER_TRINITY_FRONT_MANAGER_IMG_FULL_TAG}"
+    restart: always
+    ports:
+      - 8081:80
+    environment:
+      API_URL: "${DOCKER_TRINITY_FRONT_MANAGER_API_URL}"
+      PROF_API_URL: "${DOCKER_TRINITY_FRONT_MANAGER_PROF_API_URL}"
+
+  web:
+    image: ${DOCKER_WEB_IMG_FULL_TAG}
+    command: /bin/sh -c "python manage.py runserver 192.168.1.2:8000"
+    restart: always
+    volumes:
+      - web-app-storage-files-volume:${STATIC_ROOT}
+    ports:
+      - ${WEB_HOST_PORT}:8000
+    environment:
+      <<: *backend-envs
+      APPLICATION: bank
+    depends_on:
+      #- db
+      - rabbitmq
+    networks:
+      network:
+        aliases:
+          - web
+
+  web-client:
+    image: ${DOCKER_WEB_IMG_FULL_TAG}
+    command: /bin/sh -c "python manage.py runserver 192.168.1.2:8000"
+    restart: always
+    volumes:
+      - web-app-storage-files-volume:${STATIC_ROOT}
+    ports:
+      - ${WEB_CLIENT_WEB_HOST_PORT}:8000
+    #profiles: ["client"]
+    environment:
+      <<: *backend-envs
+      APPLICATION: bank_client
+      SECRET_KEY: ${CLIENT_SECRET_KEY}
+      ALLOWED_HOST_LIST: ${CLIENT_ALLOWED_HOST_LIST}
+    depends_on:
+      #- db
+      - rabbitmq
+    networks:
+      network:
+        aliases:
+          - web-client
+
+  celery-worker:
+    image: ${DOCKER_WEB_IMG_FULL_TAG}
+    command: /bin/sh -c "celery -A bank.app_celery worker --loglevel=DEBUG --hostname=celery-worker -Q celery,celery_save"
+    restart: always
+    volumes:
+      - web-app-storage-files-volume:${STATIC_ROOT}
+    environment:
+      <<: *backend-envs
+      AMQP: rabbitmq
+      C_FORCE_ROOT: 1
+    depends_on:
+      #- db
+      - rabbitmq
+    networks:
+      network:
+        aliases:
+          - celery
+
+  celery-beat:
+    image: ${DOCKER_WEB_IMG_FULL_TAG}
+    command: /bin/sh -c "rm -f celerybeat.pid celerybeat-schedule && celery -A bank.app_celery beat"
+    restart: always
+    volumes:
+      - web-app-storage-files-volume:${STATIC_ROOT}
+    environment:
+      <<: *backend-envs
+      AMQP: rabbitmq
+    depends_on:
+      #- db
+      - rabbitmq
+    networks:
+      network:
+        aliases:
+          - celery-beat
+
+  consumers:
+    image: ${DOCKER_WEB_IMG_FULL_TAG}
+    command: /bin/sh -c "python run_consumers.py"
+    restart: always
+    volumes:
+      - web-app-storage-files-volume:${STATIC_ROOT}
+    environment:
+      <<: *backend-envs
+      AMQP: rabbitmq
+    depends_on:
+      #- db
+      - rabbitmq
+    networks:
+      network:
+        aliases:
+          - consumers
+
+  rabbitmq:
+    image: ${DOCKER_RABBITMQ_IMG_FULL_TAG}
+    restart: always
+    ports:
+      - ${RABBITMQ_PORT_EXTERNAL}:5672
+      - ${RABBITMQ_MANAGEMENT_PORT_EXTERNAL}:15672
+    volumes:
+      - data-rabbitmq:/var/lib/rabbitmq
+    networks:
+      network:
+        aliases:
+          - rabbitmq
+
+  redis:
+    image: ${DOCKER_REDIS_IMG_FULL_TAG}
+    restart: always
+    volumes:
+      - data-redis:/data/
+    networks:
+      network:
+        aliases:
+          - redis
+
+#  db:
+#    image: ${DOCKER_POSTGRES_IMG_FULL_TAG}
+#    restart: always
+#    volumes:
+#      - data-psql:/var/lib/postgresql/data/
+#    ports:
+#      - ${DB_PORT_EXTERNAL}:5432
+#    shm_size: 256m
+#    environment:
+#      - POSTGRES_USER=${DB_USER}
+#      - POSTGRES_PASSWORD=${DB_PASSWORD}
+#      - POSTGRES_DB=${DB_NAME}
+#    networks:
+#      network:
+#        aliases:
+#          - db
+
+# provider-api
+#  provider-api:
+ #   image: ${DOCKER_PROVIDER_API_IMG_FULL_TAG}
+ #  restart: always
+ #   command: uvicorn app.main:application --host 192.168.1.2 --port 80
+ #   ports:
+ #     - "${PROVIDER_API_HOST_PORT}:80/tcp"
+ #   environment:
+ #     - "PERSISTENCE_DSN=${PERSISTENCE_DSN}"
+ ##     - "AMQP_DSN=${AMQP_DSN}"
+ #     - "PROVIDER_API_KEYS=${PROVIDER_API_KEYS}"
+ #     - "HTTP_BASIC_USERNAME=${HTTP_BASIC_USERNAME}"
+ #     - "HTTP_BASIC_PASSWORD=${HTTP_BASIC_PASSWORD}"
+  #  networks:
+  #    network:
+  #      aliases:
+   #       - provider-api
+
+# PDF containers
+  html-pdf-web:
+    image: ${DOCKER_HTML_PDF_WEB_IMG_FULL_TAG}
+    restart: always
+    ports:
+      - "${PDF_SERVICE_PORT:-8021}:80"
+    environment:
+      - PHP_HOST=${PDF_PHP_HOST:-php} # Имя контейнера с php для fastcgi_pass в конфиге nginx
+    depends_on:
+      - html-pdf-php
+    volumes:
+      - html-pdf-web-cache:/app/web/cache
+    networks:
+      network:
+        aliases:
+          - html-pdf-web
+          - html-pdf-web.domain
+
+  html-pdf-php:
+    image: ${DOCKER_HTML_PDF_PHP_IMG_FULL_TAG}
+    restart: always
+    environment:
+      - PDF_TO_HTML_API_KEY=${PDF_TO_HTML_API_KEY:-210042cad4356ad5dc192.168.1.2d192.168.1.2}
+      - PDF_LOG_FILE_LIFE_TIME=${PDF_LOG_FILE_LIFE_TIME:-1 month}
+      - PDF_DEBUG_NO_REMOVING_CACHE=${PDF_DEBUG_NO_REMOVING_CACHE:-0}
+      - PDF_RABBIT_HOST=${PDF_RABBIT_HOST:-guest:guest@rabbitmq:5672/}
+      - PDF_REDIS_HOST=${PDF_REDIS_HOST:-redis:6379}
+      - PDF_WEB_DOMAIN=${PDF_WEB_DOMAIN:-nginx} # Имя контейнера с nginx
+      - PDF_CHROME_URL=${PDF_CHROME_URL:-http://chrome:4444} # Url контейнера с Chrome
+    depends_on:
+      - html-pdf-chrome
+    volumes:
+      - html-pdf-web-cache:/app/web/cache
+    networks:
+      network:
+        aliases:
+          - html-pdf-php
+          - html-pdf-php.domain
+
+  html-pdf-queue:
+    image: ${DOCKER_HTML_PDF_QUEUE_IMG_FULL_TAG}
+    entrypoint: ["/bin/sh", "-c", "php -f /app/queue_printer.php"]
+    restart: always
+    environment:
+      - PDF_LOG_FILE_LIFE_TIME=${PDF_LOG_FILE_LIFE_TIME:-1 month}
+      - PDF_DEBUG_NO_REMOVING_CACHE=${PDF_DEBUG_NO_REMOVING_CACHE:-0}
+      - PDF_RABBIT_HOST=${PDF_RABBIT_HOST:-guest:guest@rabbitmq:5672/}
+      - PDF_REDIS_HOST=${PDF_REDIS_HOST:-redis:6379}
+      - PDF_WEB_DOMAIN=${PDF_WEB_DOMAIN:-nginx} # Имя контейнера с nginx
+      - PDF_CHROME_URL=${PDF_CHROME_URL:-http://chrome:4444} # Url контейнера с Chrome
+    depends_on:
+      - html-pdf-chrome
+      - html-pdf-redis
+      - html-pdf-rabbitmq
+    volumes:
+      - html-pdf-web-cache:/app/web/cache
+    deploy:
+      replicas: 2
+    networks:
+      network:
+        aliases:
+          - html-pdf-queue
+
+  html-pdf-chrome:
+    image: ${DOCKER_HTML_PDF_CHROME_IMG_FULL_TAG}
+    restart: always
+    init: true
+    mem_limit: 8G
+    mem_reservation: 4G
+    cpus: 8
+    deploy:
+      replicas: 2
+    networks:
+      network:
+        aliases:
+          - html-pdf-chrome
+
+  html-pdf-redis:
+    image: ${DOCKER_REDIS_IMG_FULL_TAG}
+    restart: always
+    networks:
+      network:
+        aliases:
+          - html-pdf-redis
+
+  html-pdf-rabbitmq:
+    image: ${DOCKER_RABBITMQ_IMG_FULL_TAG}
+    restart: always
+    ports:
+      - "${PDF_RABBIT_PORT:-8022}:5672"
+    networks:
+      network:
+        aliases:
+          - html-pdf-rabbitmq
+
+  pdf-static-web:
+    image: ${DOCKER_PDF_STATIC_WEB_IMG_FULL_TAG}
+    restart: always
+    ports:
+      - "${PDF_STATIC_PORT:-8020}:80"
+    networks:
+      network:
+        aliases:
+          - pdf-static-web
+          - pdf-static-web.domain
+
+#profiling
+  profiling-nginx:
+    image: "${DOCKER_PROFILING_NGINX_IMG_FULL_TAG}"
+    restart: always
+    ports:
+      - '${PROFILING_SERVICE_PORT:-8000}:80'
+    environment:
+      - PHP_HOST=${PROFILING_PHP_HOST:-php} # Имя контейнера с php для fastcgi_pass в конфиге nginx
+    volumes:
+      - profiling-assets:/profiling/assets
+      - profiling-storage:/profiling/storage
+    depends_on:
+      - profiling-php
+    networks:
+      network:
+        aliases:
+          - profiling-nginx
+
+  profiling-php:
+    image: "${DOCKER_PROFILING_PHP_IMG_FULL_TAG}"
+    restart: always
+    volumes:
+      - profiling-assets:/profiling/assets
+      - profiling-storage:/profiling/storage
+    environment:
+      - PROFILING_DB_HOST=${PROFILING_DB_HOST}
+      - PROFILING_DB_NAME=${PROFILING_DB_NAME}
+      - PROFILING_DB_USER=${PROFILING_DB_USER}
+      - PROFILING_DB_PASS=${PROFILING_DB_PASS}
+      - PROFILING_RABBIT_HOST=${PROFILING_RABBIT_HOST:-guest:guest@profiling-rabbitmq:5672/}
+      - PROFILING_RABBIT_RESULTS_CHANNEL_NAME=${PROFILING_RABBIT_RESULTS_CHANNEL_NAME:-profiling_results}
+      - PROFILING_ANSWER_BASE_DIR=${PROFILING_ANSWER_BASE_DIR}
+      - PROFILING_ANSWER_BASE_URL=${PROFILING_ANSWER_BASE_URL}
+    depends_on:
+      - profiling-db
+    networks:
+      network:
+        aliases:
+          - profiling-php
+
+  profiling-db:
+    image: "${DOCKER_PROFILING_DB_IMG_FULL_TAG}"
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${PROFILING_DB_PASS}
+      MYSQL_DATABASE: ${PROFILING_DB_NAME}
+      MYSQL_INITDB_SKIP_TZINFO: 1
+    volumes:
+      - profiling-data-db:/var/lib/mysql:delegated
+    networks:
+      network:
+        aliases:
+          - profiling-db
+
+  profiling-rabbitmq:
+    image: ${DOCKER_RABBITMQ_IMG_FULL_TAG}
+    restart: always
+    #ports:
+      #- '${PROFILING_RABBIT_PORT:-5672}:5672'
+      #- '${PROFILING_RABBIT_MANAGEMENT_PORT:-15672}:15672'
+    volumes:
+      - profiling-data-rabbit:/var/lib/rabbitmq
+    environment:
+      - 'RABBITMQ_NODENAME=${PROFILING_RABBIT_NODENAME}'
+    networks:
+      network:
+        aliases:
+          - profiling-rabbitmq
+
+#audit container
+  audit-printer:
+    image: ${DOCKER_AUDIT_PRINTER_FULL_TAG}
+    command: /bin/sh -c "python print_audit_log.py"
+    restart: always
+    environment:
+      - RABBITMQ_HOST=${RABBITMQ_HOST}
+      - RABBITMQ_PORT=${RABBITMQ_PORT}
+      - RABBITMQ_QUEUE_NAME=${RABBITMQ_QUEUE_NAME}
+    logging:
+      driver: "syslog"
+      options:
+        syslog-address: "udp://192.168.1.2:514"
+    networks:
+      network:
+        aliases:
+          - audit-printer
+
+#migration container
+  web-migration:
+    image: ${DOCKER_WEB_IMG_FULL_TAG}
+    command: /bin/sh -c "python manage.py migrate && sleep 5 && cat /usr/src/app/log/error.log"
+    environment:
+      <<: *backend-envs
+      APPLICATION: bank
+    depends_on:
+      #- db
+      - rabbitmq
+    networks:
+      network:
+        aliases:
+          - web
+
+#monitoring
+  docker-exporter:
+    image: nexus.domain/department/exporters/docker_exporter:071221
+    restart: always
+    ports:
+      - 192.168.1.2
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      network:
+        aliases:
+          - docker-exporter
+
+  postgres-exporter:
+    image: nexus.domain/department/infrastructure/postgres-exporter:v0.10.1
+    restart: always
+    ports:
+      - 192.168.1.2
+    environment:
+      DATA_SOURCE_URI: "${DB_HOST}?sslmode=disable"
+      DATA_SOURCE_USER: "${DB_USER}"
+      DATA_SOURCE_PASS: "${DB_PASSWORD}"
+    networks:
+      network:
+        aliases:
+          - postgres-exporter
+
+  cvip-client-exporter:
+    image: nexus.domain/department/infrastructure/cvip-client:v0.42.0
+    command: /usr/bin/cvip-client -logtostderr --store_container_labels=false --docker_only=true
+    restart: always
+    ports:
+      - 192.168.1.2
+    volumes:
+      - /:/rootfs:ro
+      - /var/run/:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    networks:
+      network:
+        aliases:
+          - cvip-client-exporter
+
+volumes:
+  data-rabbitmq:
+  data-psql:
+  web-app-storage-files-volume:
+  html-pdf-web-cache:
+  data-redis:
+  profiling-data-db:
+  profiling-data-rabbit:
+  profiling-storage:
+  profiling-assets:
+  nginx-config:
+  nginx-ssl:
+  nginx-certs:
+

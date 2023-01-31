@@ -1,0 +1,38 @@
+---
+# tasks file for deploy_backend
+- name: Make Sure Source Directory Exists
+  file:
+    state: directory
+    path: "{{ deploy_src }}"
+
+- name: Render .env files
+  template:
+    src: "{{ item }}.j2"
+    dest: "{{ deploy_src }}/{{ item }}"
+  with_items: "{{ env_files }}"
+
+- name: Render docker-compose.yml
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ deploy_src }}/docker-compose.yml"
+    mode: 0600
+
+- name: Debug Nexus Username {{ registry_username }}
+  debug:
+          msg: "Password = {{ registry_password }}"
+
+- name: NEXUS HOSTNAME TO CONNECT {{ nexus_base_url }}
+  debug:
+          msg: "Password = {{ registry_password }}"
+
+- name: Login to Docker Registry
+  docker_login:
+    registry_url: "https://{{ nexus_base_url }}"
+    username: "{{ registry_username }}"
+    password: "{{ registry_password }}"
+
+- name: Start Backend via docker-compose
+  docker_compose:
+    project_src: "{{ deploy_src }}"
+    pull: yes
+    state: present
