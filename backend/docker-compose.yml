@@ -277,7 +277,7 @@ services:
     volumes:
       - html-pdf-web-cache:/app/web/cache
     deploy:
-      replicas: 2
+      repliccc: 2
     networks:
       network:
         aliases:
@@ -291,7 +291,7 @@ services:
     mem_reservation: 4G
     cpus: 8
     deploy:
-      replicas: 2
+      repliccc: 2
     networks:
       network:
         aliases:
